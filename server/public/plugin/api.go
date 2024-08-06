@@ -241,6 +241,12 @@ type API interface {
 	// Minimum server version: 5.6
 	GetTeamIcon(teamID string) ([]byte, *model.AppError)
 
+	// GetPluginId gets the plugin's ID.
+	//
+	// @tag ID
+	// Minimum server version: 9.12
+	GetPluginId() string
+
 	// SetTeamIcon sets the team icon.
 	//
 	// @tag Team

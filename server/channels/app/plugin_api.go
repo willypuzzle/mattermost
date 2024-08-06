@@ -111,6 +111,10 @@ func (api *PluginAPI) GetPluginConfig() map[string]any {
 	return map[string]any{}
 }
 
+func (api *PluginAPI) GetPluginId() string {
+	return api.manifest.Id
+}
+
 func (api *PluginAPI) SavePluginConfig(pluginConfig map[string]any) *model.AppError {
 	cfg := api.app.GetSanitizedConfig()
 	cfg.PluginSettings.Plugins[api.manifest.Id] = pluginConfig

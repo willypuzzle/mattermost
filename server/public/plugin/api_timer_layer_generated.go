@@ -62,6 +62,10 @@ func (api *apiTimerLayer) GetConfig() *model.Config {
 	return _returnsA
 }
 
+func (api *apiTimerLayer) GetPluginId() string {
+	return api.pluginID
+}
+
 func (api *apiTimerLayer) GetUnsanitizedConfig() *model.Config {
 	startTime := timePkg.Now()
 	_returnsA := api.apiImpl.GetUnsanitizedConfig()

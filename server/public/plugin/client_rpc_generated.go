@@ -1348,6 +1348,10 @@ func (g *apiRPCClient) GetPluginConfig() map[string]any {
 	return _returns.A
 }
 
+func (g *apiRPCClient) GetPluginId() string {
+	return g.pluginId
+}
+
 func (s *apiRPCServer) GetPluginConfig(args *Z_GetPluginConfigArgs, returns *Z_GetPluginConfigReturns) error {
 	if hook, ok := s.impl.(interface {
 		GetPluginConfig() map[string]any

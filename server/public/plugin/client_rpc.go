@@ -68,6 +68,7 @@ func (p *hooksPlugin) Client(b *plugin.MuxBroker, client *rpc.Client) (any, erro
 }
 
 type apiRPCClient struct {
+	pluginId  string
 	client    *rpc.Client
 	muxBroker *plugin.MuxBroker
 }
@@ -282,6 +283,7 @@ func (s *hooksRPCServer) OnActivate(args *Z_OnActivateArgs, returns *Z_OnActivat
 	}
 
 	s.apiRPCClient = &apiRPCClient{
+		pluginId:  fmt.Sprintf("%d", args.APIMuxId),
 		client:    rpc.NewClient(connection),
 		muxBroker: s.muxBroker,
 	}
