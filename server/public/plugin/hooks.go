@@ -61,6 +61,7 @@ const (
 	OnSharedChannelsAttachmentSyncMsgID       = 43
 	OnSharedChannelsProfileImageSyncMsgID     = 44
 	GenerateSupportDataID                     = 45
+	OnPluginStatusesChangedID                 = 46
 	TotalHooksID                              = iota
 )
 
@@ -395,4 +396,7 @@ type Hooks interface {
 	//
 	// Minimum server version: 9.8
 	GenerateSupportData(c *Context) ([]*model.FileData, error)
+
+	// OnPluginStatusesChanged is invoked when the system calls App.notifyPluginStatusesChanged
+	OnPluginStatusesChanged(c *Context) error
 }

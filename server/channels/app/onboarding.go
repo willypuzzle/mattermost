@@ -14,7 +14,7 @@ import (
 	"github.com/mattermost/mattermost/server/v8/channels/store"
 )
 
-func (a *App) markAdminOnboardingComplete(c request.CTX) *model.AppError {
+func (a *App) markAdminOnboardingComplete() *model.AppError {
 	firstAdminCompleteSetupObj := model.System{
 		Name:  model.SystemFirstAdminSetupComplete,
 		Value: "true",
@@ -47,7 +47,7 @@ func (a *App) CompleteOnboarding(c request.CTX, request *model.CompleteOnboardin
 
 	pluginsEnvironment := a.Channels().GetPluginsEnvironment()
 	if pluginsEnvironment == nil {
-		return a.markAdminOnboardingComplete(c)
+		return a.markAdminOnboardingComplete()
 	}
 
 	pluginContext := pluginContext(c)
@@ -57,7 +57,7 @@ func (a *App) CompleteOnboarding(c request.CTX, request *model.CompleteOnboardin
 			installRequest := &model.InstallMarketplacePluginRequest{
 				Id: id,
 			}
-			_, appErr := a.Channels().InstallMarketplacePlugin(installRequest)
+			_, appErr := a.Channels().InstallMarketplacePlugin(installRequest, c)
 			if appErr != nil {
 				c.Logger().Error("Failed to install plugin for onboarding", mlog.String("id", id), mlog.Err(appErr))
 				return
@@ -84,7 +84,7 @@ func (a *App) CompleteOnboarding(c request.CTX, request *model.CompleteOnboardin
 		}(pluginID)
 	}
 
-	return a.markAdminOnboardingComplete(c)
+	return a.markAdminOnboardingComplete()
 }
 
 func (a *App) GetOnboarding() (*model.System, *model.AppError) {

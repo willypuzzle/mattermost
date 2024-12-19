@@ -12084,7 +12084,7 @@ func (a *OpenTracingAppLayer) InitPlugins(c request.CTX, pluginDir string, webap
 	a.app.InitPlugins(c, pluginDir, webappPluginDir)
 }
 
-func (a *OpenTracingAppLayer) InstallPlugin(pluginFile io.ReadSeeker, replace bool) (*model.Manifest, *model.AppError) {
+func (a *OpenTracingAppLayer) InstallPlugin(pluginFile io.ReadSeeker, replace bool, c request.CTX) (*model.Manifest, *model.AppError) {
 	origCtx := a.ctx
 	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.InstallPlugin")
 
@@ -12096,7 +12096,7 @@ func (a *OpenTracingAppLayer) InstallPlugin(pluginFile io.ReadSeeker, replace bo
 	}()
 
 	defer span.Finish()
-	resultVar0, resultVar1 := a.app.InstallPlugin(pluginFile, replace)
+	resultVar0, resultVar1 := a.app.InstallPlugin(pluginFile, replace, c)
 
 	if resultVar1 != nil {
 		span.LogFields(spanlog.Error(resultVar1))

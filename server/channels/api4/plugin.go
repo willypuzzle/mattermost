@@ -157,7 +157,7 @@ func installMarketplacePlugin(c *Context, w http.ResponseWriter, r *http.Request
 	// https://mattermost.atlassian.net/browse/MM-41981
 	pluginRequest.Version = ""
 
-	manifest, appErr := c.App.Channels().InstallMarketplacePlugin(pluginRequest)
+	manifest, appErr := c.App.Channels().InstallMarketplacePlugin(pluginRequest, c.AppContext)
 	if appErr != nil {
 		c.Err = appErr
 		return
@@ -410,7 +410,7 @@ func parseMarketplacePluginFilter(u *url.URL) (*model.MarketplacePluginFilter, e
 }
 
 func installPlugin(c *Context, w http.ResponseWriter, plugin io.ReadSeeker, force bool) {
-	manifest, appErr := c.App.InstallPlugin(plugin, force)
+	manifest, appErr := c.App.InstallPlugin(plugin, force, c.AppContext)
 	if appErr != nil {
 		c.Err = appErr
 		return

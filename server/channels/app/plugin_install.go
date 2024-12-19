@@ -85,6 +85,7 @@ package app
 import (
 	"bytes"
 	"fmt"
+	"github.com/mattermost/mattermost/server/public/shared/request"
 	"io"
 	"net/http"
 	"os"
@@ -181,13 +182,13 @@ func (ch *Channels) removePluginFromClusterMessage(pluginID string) {
 
 // InstallPlugin unpacks and installs a plugin but does not enable or activate it unless the the
 // plugin was already enabled.
-func (a *App) InstallPlugin(pluginFile io.ReadSeeker, replace bool) (*model.Manifest, *model.AppError) {
+func (a *App) InstallPlugin(pluginFile io.ReadSeeker, replace bool, c request.CTX) (*model.Manifest, *model.AppError) {
 	installationStrategy := installPluginLocallyOnlyIfNew
 	if replace {
 		installationStrategy = installPluginLocallyAlways
 	}
 
-	return a.ch.installPlugin(pluginFile, nil, installationStrategy)
+	return a.ch.installPlugin(pluginFile, nil, installationStrategy, c)
 }
 
 // installPlugin extracts and installs the given plugin bundle (optionally signed) for the
@@ -195,7 +196,7 @@ func (a *App) InstallPlugin(pluginFile io.ReadSeeker, replace bool) (*model.Mani
 // cluster peers to use, and then broadcasts the change to connected websockets.
 //
 // The given installation strategy decides how to handle upgrade scenarios.
-func (ch *Channels) installPlugin(bundle, signature io.ReadSeeker, installationStrategy pluginInstallationStrategy) (*model.Manifest, *model.AppError) {
+func (ch *Channels) installPlugin(bundle, signature io.ReadSeeker, installationStrategy pluginInstallationStrategy, c request.CTX) (*model.Manifest, *model.AppError) {
 	manifest, appErr := ch.installPluginLocally(bundle, installationStrategy)
 	if appErr != nil {
 		return nil, appErr
@@ -216,7 +217,7 @@ func (ch *Channels) installPlugin(bundle, signature io.ReadSeeker, installationS
 		logger.Warn("Failed to notify plugin enabled", mlog.Err(err))
 	}
 
-	if err := ch.notifyPluginStatusesChanged(); err != nil {
+	if err := ch.notifyPluginStatusesChanged(c); err != nil {
 		logger.Warn("Failed to notify plugin status changed", mlog.Err(err))
 	}
 
@@ -269,7 +270,7 @@ func (ch *Channels) installPluginToFilestore(manifest *model.Manifest, bundle, s
 // InstallMarketplacePlugin installs a plugin listed in the marketplace server. It will get the
 // plugin bundle from the prepackaged folder, if available, or remotely if EnableRemoteMarketplace
 // is true.
-func (ch *Channels) InstallMarketplacePlugin(request *model.InstallMarketplacePluginRequest) (*model.Manifest, *model.AppError) {
+func (ch *Channels) InstallMarketplacePlugin(request *model.InstallMarketplacePluginRequest, c request.CTX) (*model.Manifest, *model.AppError) {
 	logger := ch.srv.Log().With(mlog.String("plugin_id", request.Id))
 
 	var pluginFile, signatureFile io.ReadSeeker
@@ -339,7 +340,7 @@ func (ch *Channels) InstallMarketplacePlugin(request *model.InstallMarketplacePl
 		return nil, appErr
 	}
 
-	manifest, appErr := ch.installPlugin(pluginFile, signatureFile, installPluginLocallyAlways)
+	manifest, appErr := ch.installPlugin(pluginFile, signatureFile, installPluginLocallyAlways, c)
 	if appErr != nil {
 		return nil, appErr
 	}
