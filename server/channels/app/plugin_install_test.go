@@ -7,8 +7,13 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
+	"github.com/mattermost/mattermost/server/public/shared/i18n"
+	"github.com/mattermost/mattermost/server/public/shared/request"
+	"github.com/mattermost/mattermost/server/v8/channels/utils"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -275,7 +280,23 @@ func TestInstallPluginAlreadyActive(t *testing.T) {
 	reader, err := os.Open(filepath.Join(path, "testplugin.tar.gz"))
 	require.NoError(t, err)
 
-	actualManifest, appError := th.App.InstallPlugin(reader, true)
+	r, err := http.NewRequest("POST", "/api/v4/plugins", nil)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+
+	tx, _ := i18n.GetTranslationsAndLocaleFromRequest(r)
+	appContext := request.NewContext(
+		context.Background(),
+		model.NewId(),
+		utils.GetIPAddress(r, th.App.Config().ServiceSettings.TrustedProxyIPHeader),
+		r.Header.Get("X-Forwarded-For"),
+		r.URL.Path,
+		r.UserAgent(),
+		r.Header.Get("Accept-Language"),
+		tx,
+	)
+
+	actualManifest, appError := th.App.InstallPlugin(reader, true, appContext)
 	require.NotNil(t, actualManifest)
 	require.Nil(t, appError)
 	appError = th.App.EnablePlugin(actualManifest.Id)
@@ -293,7 +314,7 @@ func TestInstallPluginAlreadyActive(t *testing.T) {
 		}
 	}
 
-	actualManifest, appError = th.App.InstallPlugin(reader, true)
+	actualManifest, appError = th.App.InstallPlugin(reader, true, appContext)
 	require.NotNil(t, appError)
 	require.Nil(t, actualManifest)
 	require.Equal(t, "app.plugin.restart.app_error", appError.Id)

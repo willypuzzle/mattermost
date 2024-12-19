@@ -3265,8 +3265,8 @@ func (_m *API) HasPermissionToTeam(userID string, teamID string, permission *mod
 }
 
 // InstallPlugin provides a mock function with given fields: file, replace
-func (_m *API) InstallPlugin(file io.Reader, replace bool) (*model.Manifest, *model.AppError) {
-	ret := _m.Called(file, replace)
+func (_m *API) InstallPlugin(file io.Reader, replace bool, r http.Request) (*model.Manifest, *model.AppError) {
+	ret := _m.Called(file, replace, r)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InstallPlugin")

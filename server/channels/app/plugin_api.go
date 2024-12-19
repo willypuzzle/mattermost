@@ -5,9 +5,11 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mattermost/mattermost/server/v8/channels/utils"
 	"io"
 	"net/http"
 	"net/url"
@@ -924,7 +926,7 @@ func (api *PluginAPI) GetPluginStatus(id string) (*model.PluginStatus, *model.Ap
 	return api.app.GetPluginStatus(id)
 }
 
-func (api *PluginAPI) InstallPlugin(file io.Reader, replace bool) (*model.Manifest, *model.AppError) {
+func (api *PluginAPI) InstallPlugin(file io.Reader, replace bool, r http.Request) (*model.Manifest, *model.AppError) {
 	if !*api.app.Config().PluginSettings.Enable || !*api.app.Config().PluginSettings.EnableUploads {
 		return nil, model.NewAppError("installPlugin", "app.plugin.upload_disabled.app_error", nil, "", http.StatusNotImplemented)
 	}
@@ -934,7 +936,19 @@ func (api *PluginAPI) InstallPlugin(file io.Reader, replace bool) (*model.Manife
 		return nil, model.NewAppError("InstallPlugin", "api.plugin.upload.file.app_error", nil, "", http.StatusBadRequest)
 	}
 
-	return api.app.InstallPlugin(bytes.NewReader(fileBuffer), replace)
+	t, _ := i18n.GetTranslationsAndLocaleFromRequest(&r)
+	appContext := request.NewContext(
+		context.Background(),
+		model.NewId(),
+		utils.GetIPAddress(&r, api.app.Config().ServiceSettings.TrustedProxyIPHeader),
+		r.Header.Get("X-Forwarded-For"),
+		r.URL.Path,
+		r.UserAgent(),
+		r.Header.Get("Accept-Language"),
+		t,
+	)
+
+	return api.app.InstallPlugin(bytes.NewReader(fileBuffer), replace, appContext)
 }
 
 // KV Store Section

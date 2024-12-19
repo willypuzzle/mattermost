@@ -894,7 +894,7 @@ type API interface {
 	//
 	// @tag Plugin
 	// Minimum server version: 5.18
-	InstallPlugin(file io.Reader, replace bool) (*model.Manifest, *model.AppError)
+	InstallPlugin(file io.Reader, replace bool, r http.Request) (*model.Manifest, *model.AppError)
 
 	// KV Store Section
 

@@ -2141,3 +2141,118 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		}
 	})
 }
+
+func TestOnPluginStatusesChanged(t *testing.T) {
+	getPluginCode := func(th *TestHelper) string {
+		return `
+			package main
+
+			import (
+				"github.com/mattermost/mattermost/server/public/plugin"
+				"github.com/mattermost/mattermost/server/public/model"
+			)
+
+			const (
+				adminUserID = "` + th.SystemAdminUser.Id + `"
+			)
+
+			type MyPlugin struct {
+				plugin.MattermostPlugin
+			}
+
+			func (p *MyPlugin) OnPluginStatusesChanged(c *plugin.Context) error{
+				_, appErr := p.API.GetPluginStatuses()
+				if appErr != nil {
+					panic(appErr)
+				}
+			}
+
+			func main() {
+				plugin.ClientMain(&MyPlugin{})
+			}
+		`
+	}
+	pluginID := "testplugin"
+	pluginManifest := `{"id": "testplugin", "server": {"executable": "backend.exe"}}`
+
+	t.Run("should call hook when a regular channel is created", func(t *testing.T) {
+		th := Setup(t).InitBasic()
+		defer th.TearDown()
+
+		// Setup plugin
+		setupPluginAPITest(t, getPluginCode(th), pluginManifest, pluginID, th.App, th.Context)
+
+		user1 := th.CreateUser()
+
+		channel, appErr := th.App.CreateChannel(th.Context, &model.Channel{
+			CreatorId: user1.Id,
+			TeamId:    th.BasicTeam.Id,
+			Name:      "test_channel",
+			Type:      model.ChannelTypeOpen,
+		}, false)
+		require.Nil(t, appErr)
+		require.NotNil(t, channel)
+
+		assert.EventuallyWithT(t, func(t *assert.CollectT) {
+			posts, appErr := th.App.GetPosts(channel.Id, 0, 1)
+
+			require.Nil(t, appErr)
+			assert.True(t, len(posts.Order) > 0)
+
+			post := posts.Posts[posts.Order[0]]
+			assert.Equal(t, channel.Id, post.ChannelId)
+			assert.Equal(t, "ChannelHasBeenCreated has been called for "+channel.Id, post.Message)
+		}, 5*time.Second, 100*time.Millisecond)
+	})
+
+	t.Run("should call hook when a DM is created", func(t *testing.T) {
+		th := Setup(t).InitBasic()
+		defer th.TearDown()
+
+		// Setup plugin
+		setupPluginAPITest(t, getPluginCode(th), pluginManifest, pluginID, th.App, th.Context)
+
+		user1 := th.CreateUser()
+		user2 := th.CreateUser()
+
+		channel, appErr := th.App.GetOrCreateDirectChannel(th.Context, user1.Id, user2.Id)
+		require.Nil(t, appErr)
+		require.NotNil(t, channel)
+
+		assert.EventuallyWithT(t, func(t *assert.CollectT) {
+			posts, appErr := th.App.GetPosts(channel.Id, 0, 1)
+
+			require.Nil(t, appErr)
+			assert.True(t, len(posts.Order) > 0)
+			post := posts.Posts[posts.Order[0]]
+			assert.Equal(t, channel.Id, post.ChannelId)
+			assert.Equal(t, "ChannelHasBeenCreated has been called for "+channel.Id, post.Message)
+		}, 5*time.Second, 100*time.Millisecond)
+	})
+
+	t.Run("should call hook when a GM is created", func(t *testing.T) {
+		th := Setup(t).InitBasic()
+		defer th.TearDown()
+
+		// Setup plugin
+		setupPluginAPITest(t, getPluginCode(th), pluginManifest, pluginID, th.App, th.Context)
+
+		user1 := th.CreateUser()
+		user2 := th.CreateUser()
+		user3 := th.CreateUser()
+
+		channel, appErr := th.App.CreateGroupChannel(th.Context, []string{user1.Id, user2.Id, user3.Id}, user1.Id)
+		require.Nil(t, appErr)
+		require.NotNil(t, channel)
+
+		assert.EventuallyWithT(t, func(t *assert.CollectT) {
+			posts, appErr := th.App.GetPosts(channel.Id, 0, 1)
+
+			require.Nil(t, appErr)
+			assert.True(t, len(posts.Order) > 0)
+			post := posts.Posts[posts.Order[0]]
+			assert.Equal(t, channel.Id, post.ChannelId)
+			assert.Equal(t, "ChannelHasBeenCreated has been called for "+channel.Id, post.Message)
+		}, 5*time.Second, 100*time.Millisecond)
+	})
+}

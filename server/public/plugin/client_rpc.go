@@ -853,6 +853,7 @@ func (s *apiRPCServer) LogError(args *Z_LogErrorArgs, returns *Z_LogErrorReturns
 type Z_InstallPluginArgs struct {
 	PluginStreamID uint32
 	B              bool
+	r              http.Request
 }
 
 type Z_InstallPluginReturns struct {
@@ -860,7 +861,7 @@ type Z_InstallPluginReturns struct {
 	B *model.AppError
 }
 
-func (g *apiRPCClient) InstallPlugin(file io.Reader, replace bool) (*model.Manifest, *model.AppError) {
+func (g *apiRPCClient) InstallPlugin(file io.Reader, replace bool, r http.Request) (*model.Manifest, *model.AppError) {
 	pluginStreamID := g.muxBroker.NextId()
 
 	go func() {
@@ -873,7 +874,7 @@ func (g *apiRPCClient) InstallPlugin(file io.Reader, replace bool) (*model.Manif
 		serveIOReader(file, uploadPluginConnection)
 	}()
 
-	_args := &Z_InstallPluginArgs{pluginStreamID, replace}
+	_args := &Z_InstallPluginArgs{pluginStreamID, replace, r}
 	_returns := &Z_InstallPluginReturns{}
 	if err := g.client.Call("Plugin.InstallPlugin", _args, _returns); err != nil {
 		log.Print("RPC call InstallPlugin to plugin failed.", mlog.Err(err))
